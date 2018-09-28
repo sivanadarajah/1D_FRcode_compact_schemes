@@ -41,7 +41,7 @@ mu=1;%----Parameter controling the diffusion
 pathfile=pwd;
 
 %-----------------------------------------------
-choice_analysis='VN';%'VN' (stands for Von-Neumann analysis) 'TC' (stands for classical test case)%_______%----Choose---------------------
+choice_analysis='TC';%'VN' (stands for Von-Neumann analysis) 'TC' (stands for classical test case)%_______%----Choose---------------------
 %-----------------------------------------------------------------------------------------------------------------------------------
 %-----------------------------------------------------------------------------------------------------------------------------------
 %-----------------------------------------------------------------------------------------------------------------------------------
@@ -61,25 +61,25 @@ if strcmp(choice_analysis,'TC')
     if strcmp(time_dependant,'No') && c~=0
        error('Advective term in a time-independant problem'); 
     end
-    titre_error=strcat('\error_IP_');
+    titre_error=strcat('\FINAL_error_IP_');
     if strcmp(choice_results,'error')
         %Parameters
-        Np_array=[3];%number of points__________________________________________________%-------Choose-------------
+        Np_array=[3,4];%number of points__________________________________________________%-------Choose-------------
         N_p=max(size(Np_array));
         for i=1:1:N_p %Loop over the polynomial degree
             Np=Np_array(i);
             titre_final=strcat(titre_error,['_p' num2str(Np-1) '.mat']);
             if Np<5
-                Nbr_Elements_array=[16,32,64];%number of elements_______________________%-------Choose-------------
+                Nbr_Elements_array=[32,64,128];%number of elements_______________________%-------Choose-------------
             else
-                Nbr_Elements_array=[8,16,32,64,128,256];
+                Nbr_Elements_array=[32];
             end
             hk_array=(xfin-xini)./Nbr_Elements_array;
             N_Elem=max(size(Nbr_Elements_array));
-            N_c=2;%size of c_correctin: parameter used for the correction function of the main equation
+            N_c=4;%size of c_correctin: parameter used for the correction function of the main equation
             N_kappa=2;%size of kappa: parameter used for the correction function of the auxiliary equation
-            N5=1;%size of tau
-            ratio_tau=[1];%For choice_results='error', we compute \tau^{*} and we can then mutliply it byt this ratio
+            N5=2;%size of tau
+            ratio_tau=[1,1.5];%For choice_results='error', we compute \tau^{*} and we can then mutliply it byt this ratio
             result_erreur=zeros(N_c*N_kappa+2,N5*(N_Elem+(N_Elem-1)+1)+2);%Table of results
             L2_erreur=zeros(N_c*N_kappa,N5*(N_Elem));
             dt_max_array=zeros(N_c*N_kappa,N5*(N_Elem));
@@ -115,7 +115,7 @@ if strcmp(choice_analysis,'TC')
                     case 6
                         c_plus=4.24*10^-7;
                 end
-                c_array=[cDG,c_plus];
+                c_array=[cDG,cSD,cHU,c_plus];
                 %extension_c=10.^linspace(-8,8,20);
                 %c_array=[c_array,extension_c];
                 kappa_array=[cDG,c_plus];
@@ -162,7 +162,11 @@ if strcmp(choice_analysis,'TC')
                         for n=1:1:N5
                             %theory=test_theory( Np,c_correction,kappa,hk,factor,ksi,choice_results );
                             %tau=0;
-                            tau=ratio_tau(n)*penalty_term;
+                            if strcmp(choice_scheme,'compact')
+                                tau=ratio_tau(n)*penalty_term;
+                            else
+                                tau=ratio_tau(n);
+                            end
                                 [L2_erreur(m+N_kappa*(k-1),j+N_Elem*(n-1)),~,~,dt_max_array(m+N_kappa*(k-1),j+N_Elem*(n-1))]=resolution(Np,ksi,Nbr_Elements,hk,M,invM,beta,tau,s,c_correction,kappa,...
                                     choice_analysis,choice_results,time_dependant,method_resolution,resolution_explicit,choice_scheme);
                                 L2_erreur
@@ -317,7 +321,7 @@ if strcmp(choice_analysis,'VN')
 % FIND THE MAXIMAL TIME STEP
     if strcmp(choice_results,'time')
         titre_ini='Final Von neumann analysis p=';
-        Np_array=[3,4];%________________________________________________________%-------Choose-------------
+        Np_array=[3];%________________________________________________________%-------Choose-------------
         N_p=max(size(Np_array));
         N_c=2;%Elem
         N_kappa=24;%N_c
@@ -367,9 +371,6 @@ if strcmp(choice_analysis,'VN')
             extension_kappa=10.^linspace(-8,8,20);
             kappa_array=[kappa_array,extension_kappa];
             N2r=max(size(c_array));
-            if N2r~=N_Elem
-                error('size of N2(corrections functions) is not the same as the prelocated one');
-            end
             for j=1:1:N_c
                 c_correction=c_array(j);% c_correction is the correction functions for the main equation
                 for k=1:1:N_kappa

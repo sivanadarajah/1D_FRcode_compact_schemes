@@ -37,7 +37,7 @@ global xini
 global xfin
 
 error=0;
-Np2=Np;
+Np2=Np+4;
 ksi=lglnodes(Np-1);
 [ksi2,W2]=lglnodes(Np2-1);
 [~,Lagrange]=derivative_Lagrange(ksi,Np);
